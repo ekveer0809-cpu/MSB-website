@@ -279,9 +279,13 @@ html[data-theme="dark"] .slogo{background:#fff;border-radius:8px;padding:6px 10p
 .scard.own{background:linear-gradient(150deg,var(--red-tint),var(--panel) 62%);border-color:rgba(234,28,36,.3)}
 
 /* ---------- industries ---------- */
-.inds{display:flex;flex-wrap:wrap;gap:10px}
+.inds-belt{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.inds-track{display:flex;width:max-content;animation:slide 34s linear infinite}
+.inds-belt:hover .inds-track{animation-play-state:paused}
+.inds-group{display:flex;align-items:center;gap:10px;padding-right:10px;flex:none}
 .ind{border:1px solid var(--line);background:var(--chip);padding:11px 20px;border-radius:999px;
-  font-size:14.5px;font-weight:600;color:var(--ink-2);transition:.25s}
+  font-size:14.5px;font-weight:600;color:var(--ink-2);transition:.25s;white-space:nowrap;flex:none}
 .ind:hover{color:#fff;background:var(--grad-red);border-color:transparent;transform:translateY(-2px)}
 
 /* ---------- testimonials ---------- */
@@ -634,12 +638,23 @@ footer a:hover{color:var(--red)}
       <h2 class="split grad-text" data-split>Built for the plants that can't stop</h2>
       <p class="rv" data-d="2">From spinning mills to cement kilns — our belting, pulleys and spares keep critical lines running.</p>
     </div>
-    <div class="inds rv">
-      <span class="ind">Textile &amp; Spinning</span><span class="ind">Automotive</span><span class="ind">Ceramic</span>
-      <span class="ind">Steel</span><span class="ind">Cement</span><span class="ind">Chemicals &amp; Fertilizers</span>
-      <span class="ind">Food Processing</span><span class="ind">Pharmaceutical</span><span class="ind">Power Generation</span>
-      <span class="ind">Mining</span><span class="ind">Agriculture</span><span class="ind">Packaging</span>
-      <span class="ind">Energy</span><span class="ind">OEM Machine Builders</span>
+  </div>
+  <div class="inds-belt rv">
+    <div class="inds-track">
+      <div class="inds-group">
+        <span class="ind">Textile &amp; Spinning</span><span class="ind">Automotive</span><span class="ind">Ceramic</span>
+        <span class="ind">Steel</span><span class="ind">Cement</span><span class="ind">Chemicals &amp; Fertilizers</span>
+        <span class="ind">Food Processing</span><span class="ind">Pharmaceutical</span><span class="ind">Power Generation</span>
+        <span class="ind">Mining</span><span class="ind">Agriculture</span><span class="ind">Packaging</span>
+        <span class="ind">Energy</span><span class="ind">OEM Machine Builders</span>
+      </div>
+      <div class="inds-group" aria-hidden="true">
+        <span class="ind">Textile &amp; Spinning</span><span class="ind">Automotive</span><span class="ind">Ceramic</span>
+        <span class="ind">Steel</span><span class="ind">Cement</span><span class="ind">Chemicals &amp; Fertilizers</span>
+        <span class="ind">Food Processing</span><span class="ind">Pharmaceutical</span><span class="ind">Power Generation</span>
+        <span class="ind">Mining</span><span class="ind">Agriculture</span><span class="ind">Packaging</span>
+        <span class="ind">Energy</span><span class="ind">OEM Machine Builders</span>
+      </div>
     </div>
   </div>
 </section>
