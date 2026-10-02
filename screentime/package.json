@@ -1,0 +1,18 @@
+{
+  "name": "screentime-pwa",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Child screen-time tracker PWA: 2 child accounts, 1 adult, password login, push notifications",
+  "scripts": {
+    "start": "node server.js",
+    "icons": "node make-icons.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.39.0",
+    "web-push": "^3.6.7"
+  }
+}
