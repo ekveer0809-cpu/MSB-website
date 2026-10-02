@@ -273,5 +273,5 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 render();
 if (token) { refresh(); syncPush(); }
 setInterval(tick, 1000);
-setInterval(refresh, 5000);
+setInterval(() => { if (!document.hidden) refresh(); }, 15000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });

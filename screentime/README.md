@@ -25,13 +25,27 @@ under **Settings** (e.g. if a child forgets theirs). You can still pre-set passw
 **Remember me** (ticked by default): keeps you signed in on that device for 30 days. Unticked, you stay signed in
 until the browser/app is closed (and at most 12 hours).
 
-Other env vars: `PORT` (3000), `DATA_DIR` (`./data`), `VAPID_SUBJECT` (a `https://` URL for push).
+## Deploy to Vercel (recommended)
 
-## Deploying
+The same code runs as a Vercel serverless function (`api/[...route].js`) with state stored in **Upstash Redis**.
 
-Push notifications and installing as an app both require **HTTPS** (localhost is exempt), and the server needs a
-persistent disk for `DATA_DIR` (accounts, logs, push subscriptions). Use a long-running host such as Render, Fly.io,
-Railway or a VPS; serverless hosts (e.g. Vercel) are not suitable because they have no persistent filesystem.
+1. Vercel → **Add New → Project** → import this repo. Set **Root Directory** to `screentime`. No build settings needed.
+2. In the project: **Storage → Create / Connect Database → Upstash Redis** (free plan is fine). This adds the
+   `KV_REST_API_URL` / `KV_REST_API_TOKEN` env vars automatically.
+3. **Settings → Environment Variables**, add:
+   - `CRON_SECRET` = any long random string
+   - `VAPID_SUBJECT` = your site URL, e.g. `https://your-app.vercel.app`
+4. Redeploy so the env vars take effect.
+5. **The 90-minute check needs a timer.** Vercel's free (Hobby) cron only runs daily, so use a free external
+   scheduler such as [cron-job.org](https://cron-job.org): create a job that calls
+   `https://your-app.vercel.app/api/cron?key=YOUR_CRON_SECRET` **every 1 minute**. (On Vercel Pro you can instead add a
+   `crons` entry in `vercel.json` for `/api/cron`; Vercel sends `CRON_SECRET` automatically.)
+   Without it the limit alert still fires, but only when someone has the app open (it re-checks every 15s).
+
+## Run elsewhere (VPS / home server)
+
+`npm start` runs the same code with a JSON file in `DATA_DIR` (`./data`) instead of Redis, and set
+`CRON_SECRET` to enable the built-in 10s timer. Needs HTTPS in front for phones (e.g. Caddy or a Cloudflare Tunnel).
 
 ## Using it
 
