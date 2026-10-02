@@ -1,7 +1,12 @@
 'use strict';
 
 const $app = document.getElementById('app');
-let token = localStorage.getItem('st_token');
+const store = {
+  get: () => { try { return localStorage.getItem('st_token') || sessionStorage.getItem('st_token'); } catch { return null; } },
+  set: (t, remember) => { try { localStorage.removeItem('st_token'); sessionStorage.removeItem('st_token'); (remember ? localStorage : sessionStorage).setItem('st_token', t); } catch { /* storage blocked */ } },
+  clear: () => { try { localStorage.removeItem('st_token'); sessionStorage.removeItem('st_token'); } catch { /* ignore */ } },
+};
+let token = store.get();
 let state = null;
 let fetchedAt = 0;
 let tab = 'overview';
@@ -34,14 +39,14 @@ async function api(route, body) {
     body: body ? JSON.stringify(body) : undefined,
   });
   const j = await r.json().catch(() => ({}));
-  if (r.status === 401 && token && route !== 'login') { signOutLocal(); throw new Error('Signed out'); }
+  if (r.status === 401 && token && route !== 'login' && route !== 'setup') { signOutLocal(); throw new Error('Signed out'); }
   if (!r.ok) throw new Error(j.error || 'Something went wrong');
   return j;
 }
 
 function signOutLocal() {
   token = null; state = null;
-  localStorage.removeItem('st_token');
+  store.clear();
   render();
 }
 
@@ -84,19 +89,28 @@ function pushBanner() {
 // ---------- views ----------
 async function renderLogin() {
   if (!loginUser) {
-    $app.innerHTML = '<h1>Screen Time</h1><p class="muted">Who is logging in?</p><div class="accts" id="accts"></div>';
+    $app.innerHTML = `<div class="home"><img src="/icons/icon-192.png" alt="" width="88" height="88">
+      <h1>Screen Time</h1><p class="muted">Who are you?</p><div class="accts" id="accts"></div></div>`;
     try {
       const { accounts } = await api('accounts');
       document.getElementById('accts').innerHTML = accounts.map((a) =>
-        `<button class="acct" data-act="pick" data-id="${a.id}">${esc(a.name)}<small>${a.role === 'adult' ? 'Adult' : 'Child'}</small></button>`).join('');
+        `<button class="acct" data-act="pick" data-id="${a.id}" data-name="${esc(a.name)}" data-has="${a.hasPassword ? 1 : 0}">
+          <span class="avatar ${a.role}">${esc(a.name.trim()[0] || '?').toUpperCase()}</span>
+          <span>${esc(a.name)}<small>${a.role === 'adult' ? 'Adult' : 'Child'}${a.hasPassword ? '' : ' · tap to set up'}</small></span></button>`).join('');
     } catch (e) { document.getElementById('accts').textContent = e.message; }
     return;
   }
-  $app.innerHTML = `<h1>${esc(loginUser.name)}</h1>
-    <form id="login" class="card"><label for="pw">Password</label>
-    <input id="pw" type="password" autocomplete="current-password" autofocus required>
+  const first = !loginUser.hasPassword;
+  $app.innerHTML = `<div class="home"><h1>${first ? 'Welcome, ' : ''}${esc(loginUser.name)}</h1>
+    <p class="muted">${first ? 'Choose a password for your account.' : 'Enter your password.'}</p></div>
+    <form id="${first ? 'setup' : 'login'}" class="card">
+    <label for="pw">${first ? 'New password' : 'Password'}</label>
+    <input id="pw" type="password" autocomplete="${first ? 'new-password' : 'current-password'}" ${first ? 'minlength="4"' : ''} required>
+    ${first ? '<label for="pw2">Confirm password</label><input id="pw2" type="password" autocomplete="new-password" required>' : ''}
+    <label class="check"><input id="remember" type="checkbox" checked> Remember me on this device</label>
     <p class="err" id="err"></p>
-    <div class="row"><button type="button" class="ghost" data-act="back">Back</button><button type="submit">Log in</button></div></form>`;
+    <div class="row"><button type="button" class="ghost" data-act="back">Back</button><button type="submit">${first ? 'Save and continue' : 'Log in'}</button></div></form>`;
+  document.getElementById('pw').focus();
 }
 
 function limitBar(used) {
@@ -212,7 +226,7 @@ document.addEventListener('click', async (ev) => {
   const act = el.dataset.act;
   try {
     if (act === 'pick') {
-      loginUser = { id: el.dataset.id, name: el.textContent.replace(/(Adult|Child)$/, '').trim() };
+      loginUser = { id: el.dataset.id, name: el.dataset.name, hasPassword: el.dataset.has === '1' };
       render();
     } else if (act === 'back') { loginUser = null; render(); }
     else if (act === 'logout') { try { await api('logout', {}); } catch { /* ignore */ } loginUser = null; signOutLocal(); }
@@ -234,9 +248,12 @@ document.addEventListener('submit', async (ev) => {
   const f = ev.target;
   const err = document.getElementById('err');
   try {
-    if (f.id === 'login') {
-      const { token: t } = await api('login', { user: loginUser.id, password: f.querySelector('#pw').value });
-      token = t; localStorage.setItem('st_token', t); loginUser = null;
+    if (f.id === 'login' || f.id === 'setup') {
+      const pw = f.querySelector('#pw').value;
+      if (f.id === 'setup' && pw !== f.querySelector('#pw2').value) throw new Error('Passwords do not match');
+      const remember = f.querySelector('#remember').checked;
+      const { token: t } = await api(f.id, { user: loginUser.id, password: pw, remember });
+      token = t; store.set(t, remember); loginUser = null;
       await refresh(); syncPush();
     } else if (f.id === 'settings') {
       const v = (n) => f.elements[n].value;

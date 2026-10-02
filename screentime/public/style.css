@@ -24,7 +24,9 @@ input { font: inherit; width: 100%; padding: 12px; border-radius: 12px; border: 
 label { display: block; font-size: .85rem; color: var(--muted); margin: 12px 0 4px; }
 .err { color: var(--bad); min-height: 1.3em; margin: 8px 0 0; font-size: .9rem; }
 .accts { display: grid; gap: 10px; margin-top: 16px; }
-.acct { text-align: left; background: var(--card); color: var(--text); border: 1px solid var(--line); padding: 16px; font-size: 1.1rem; }
+.home { text-align: center; padding-top: 24px; }
+.home img { border-radius: 20px; }
+.acct { display: flex; align-items: center; gap: 14px; text-align: left; background: var(--card); color: var(--text); border: 1px solid var(--line); padding: 16px; font-size: 1.1rem; }
 .acct small { display: block; color: var(--muted); font-weight: 400; }
 .big { width: 100%; padding: 22px; font-size: 1.4rem; border-radius: 18px; }
 .big.stop { background: var(--bad); }
@@ -51,3 +53,8 @@ label { display: block; font-size: .85rem; color: var(--muted); margin: 12px 0 4
 .banner { background: #fef3c7; color: #78350f; border-radius: 12px; padding: 10px 12px; margin: 12px 0; font-size: .9rem; }
 #toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 80px); background: #222; color: #fff; padding: 10px 16px; border-radius: 12px; opacity: 0; transition: .25s; pointer-events: none; max-width: 90%; }
 #toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+.avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--primary); color: #fff; font-weight: 700; font-size: 1.2rem; flex: none; }
+.avatar.child { background: var(--ok); }
+label.check { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: .95rem; margin: 14px 0 0; }
+label.check input { width: auto; }

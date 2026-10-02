@@ -14,11 +14,16 @@ Installable web app with one **Adult** and two **Child** accounts (password logi
 ```bash
 cd screentime
 npm install
-ADULT_PASSWORD=... CHILD1_PASSWORD=... CHILD2_PASSWORD=... npm start
+npm start
 ```
 
-Without the env vars, random passwords are generated on first run and printed to the console. They are only
-read on first run (when `data/data.json` is created); afterwards change them under **Settings** as the adult.
+On first launch each account has no password. The home screen lists Parent, Child 1 and Child 2; tapping one that
+isn't set up yet asks you to choose a password (typed twice), and from then on it shows a normal login. The adult
+should set up first, since whoever taps an unclaimed account first gets it. The adult can later change any password
+under **Settings** (e.g. if a child forgets theirs). You can still pre-set passwords with the env vars above.
+
+**Remember me** (ticked by default): keeps you signed in on that device for 30 days. Unticked, you stay signed in
+until the browser/app is closed (and at most 12 hours).
 
 Other env vars: `PORT` (3000), `DATA_DIR` (`./data`), `VAPID_SUBJECT` (a `https://` URL for push).
 
@@ -30,7 +35,7 @@ Railway or a VPS; serverless hosts (e.g. Vercel) are not suitable because they h
 
 ## Using it
 
-1. Open the site on each device, log in, tap **Enable** on the notifications banner.
+1. Open the site on each device, pick who you are, set your password, tap **Enable** on the notifications banner.
 2. iPhone/iPad: Share → **Add to Home Screen** first, then open from the home screen (iOS only allows web push for installed apps).
 3. Android/desktop Chrome: use the browser's Install option.
 

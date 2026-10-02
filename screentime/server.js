@@ -20,9 +20,6 @@ function makeCred(pw) {
   const salt = crypto.randomBytes(16).toString('hex');
   return { salt, hash: hashPw(pw, salt) };
 }
-function randomPw() {
-  return crypto.randomBytes(5).toString('hex');
-}
 
 let db;
 if (fs.existsSync(DATA_FILE)) {
@@ -35,13 +32,9 @@ if (fs.existsSync(DATA_FILE)) {
     ['child2', 'Child 2', 'child', process.env.CHILD2_PASSWORD],
   ];
   db = { vapid, users: {}, tokens: {}, sessions: [], alerts: [], subs: {}, limitAlerts: {}, settings: { limitMin: 90, tz: null } };
-  console.log('\nFirst run: created accounts. Passwords (change them in Settings):');
   for (const [id, name, role, pw] of accounts) {
-    const password = pw || randomPw();
-    db.users[id] = { name, role, ...makeCred(password) };
-    console.log(`  ${id.padEnd(7)} ${password}${pw ? '  (from env)' : ''}`);
+    db.users[id] = { name, role, ...(pw ? makeCred(pw) : { salt: null, hash: null }) };
   }
-  console.log('');
   save();
 }
 
@@ -137,6 +130,7 @@ function clientIp(req) {
 function authUser(req) {
   const m = /^Bearer (.+)$/.exec(req.headers.authorization || '');
   const t = m && db.tokens[m[1]];
+  if (t && t.expires < Date.now()) { delete db.tokens[m[1]]; return null; }
   return t && db.users[t.user] ? { id: t.user, token: m[1], ...db.users[t.user] } : null;
 }
 
@@ -191,25 +185,36 @@ async function api(req, res, route) {
 
   if (route === 'vapid') return json(res, 200, { key: db.vapid.publicKey });
 
-  if (route === 'login' && req.method === 'POST') {
+  if ((route === 'login' || route === 'setup') && req.method === 'POST') {
     const ip = clientIp(req);
     const f = failures.get(ip);
     if (f && f.count >= 8 && f.until > Date.now()) return json(res, 429, { error: 'Too many attempts. Try again in a few minutes.' });
     const u = db.users[body.user];
-    const ok = u && typeof body.password === 'string' &&
-      crypto.timingSafeEqual(Buffer.from(hashPw(body.password, u.salt), 'hex'), Buffer.from(u.hash, 'hex'));
-    if (!ok) {
+    const fail = (msg) => {
       failures.set(ip, { count: (f && f.until > Date.now() ? f.count : 0) + 1, until: Date.now() + 5 * 60000 });
-      return json(res, 401, { error: 'Wrong password' });
+      return json(res, 401, { error: msg });
+    };
+    if (!u) return fail('Unknown account');
+    if (route === 'setup') {
+      if (u.hash) return json(res, 409, { error: 'This account already has a password' });
+      if (typeof body.password !== 'string' || body.password.length < 4) return json(res, 400, { error: 'Password needs at least 4 characters' });
+      Object.assign(u, makeCred(body.password));
+    } else {
+      if (!u.hash) return json(res, 409, { error: 'Password not set yet' });
+      const ok = typeof body.password === 'string' &&
+        crypto.timingSafeEqual(Buffer.from(hashPw(body.password, u.salt), 'hex'), Buffer.from(u.hash, 'hex'));
+      if (!ok) return fail('Wrong password');
     }
     failures.delete(ip);
+    const now = Date.now();
+    for (const [t, v] of Object.entries(db.tokens)) if (v.expires < now) delete db.tokens[t];
     const token = crypto.randomBytes(32).toString('hex');
-    db.tokens[token] = { user: body.user, created: Date.now() };
+    db.tokens[token] = { user: body.user, created: now, expires: now + (body.remember ? 30 * DAY_MS : DAY_MS / 2) };
     save();
     return json(res, 200, { token });
   }
 
-  if (route === 'accounts') return json(res, 200, { accounts: Object.entries(db.users).map(([id, u]) => ({ id, name: u.name, role: u.role })) });
+  if (route === 'accounts') return json(res, 200, { accounts: Object.entries(db.users).map(([id, u]) => ({ id, name: u.name, role: u.role, hasPassword: !!u.hash })) });
 
   const user = authUser(req);
   if (!user) return json(res, 401, { error: 'Not logged in' });
